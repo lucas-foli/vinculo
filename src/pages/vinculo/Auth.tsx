@@ -27,6 +27,34 @@ export default function VinculoAuth() {
     if (typeParam === "creator" || typeParam === "agency") setUserType(typeParam);
   }, [params]);
 
+  const routeAfterAuth = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("user_type")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profile?.user_type === "creator") {
+      const { data: creator } = await supabase
+        .from("creators")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      navigate(creator ? "/matches" : "/onboarding/criador");
+      return;
+    }
+    if (profile?.user_type === "agency") {
+      const { data: agency } = await supabase
+        .from("agencies")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
+      navigate(agency ? "/dashboard" : "/onboarding/agencia");
+      return;
+    }
+    navigate("/");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -35,7 +63,7 @@ export default function VinculoAuth() {
 
     try {
       if (tab === "signup") {
-        const { error: err } = await supabase.auth.signUp({
+        const { data, error: err } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -43,14 +71,22 @@ export default function VinculoAuth() {
           },
         });
         if (err) throw err;
-        setSuccess("Conta criada! Verifique seu e-mail e depois complete o perfil.");
-        setTimeout(() => {
+
+        // Email confirm desabilitado: sessão criada imediatamente, vai pro onboarding.
+        // Email confirm habilitado: data.session é null, mostra mensagem de verificação.
+        if (data.session?.user) {
           navigate(userType === "creator" ? "/onboarding/criador" : "/onboarding/agencia");
-        }, 1500);
+        } else {
+          setSuccess(
+            "Conta criada! Verifique seu e-mail para confirmar a conta e depois faça login."
+          );
+          setTab("signin");
+        }
       } else {
-        const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
         if (err) throw err;
-        navigate("/");
+        if (data.user) await routeAfterAuth(data.user.id);
+        else navigate("/");
       }
     } catch (err: unknown) {
       setError((err as Error).message ?? "Erro inesperado. Tente novamente.");

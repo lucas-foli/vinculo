@@ -1,6 +1,5 @@
 import Footer from "@/components/vinculo/Footer";
 import Nav from "@/components/vinculo/Nav";
-import VinculoProtectedRoute from "@/components/VinculoProtectedRoute";
 import { useAgency } from "@/hooks/useAgencies";
 import { useAuth } from "@/hooks/useAuth";
 import { getOrCreateThread } from "@/hooks/useVinculoChat";
@@ -9,7 +8,7 @@ import { ArrowLeft, ExternalLink, MessageCircle } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
-function ContactButton({ agencyId, agencyUserId }: { agencyId: string; agencyUserId: string }) {
+function ContactButton({ agencyUserId }: { agencyUserId: string }) {
   const { user } = useAuth();
   const { profile } = useVinculoProfile(user?.id);
   const navigate = useNavigate();
@@ -129,7 +128,7 @@ export default function AgencyProfile() {
             </div>
 
             <div className="flex-shrink-0">
-              <ContactButton agencyId={agency.slug} agencyUserId={agency.user_id} />
+              <ContactButton agencyUserId={agency.user_id} />
             </div>
           </div>
         </div>
@@ -197,7 +196,7 @@ export default function AgencyProfile() {
                 )}
 
                 <div className="pt-4 border-t border-[#0F172A]/10">
-                  <ContactButton agencyId={agency.slug} agencyUserId={agency.user_id} />
+                  <ContactButton agencyUserId={agency.user_id} />
                 </div>
               </div>
             </div>
