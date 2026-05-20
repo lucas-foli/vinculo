@@ -1,0 +1,133 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Vínculo Design System — Editorial Sofisticado */
+/* Paleta: #0F172A (navy) / #B45309 (amber) / #F8F5F2 (cream) */
+/* Tipografia: Cormorant Garamond (serif) + Inter (sans) + JetBrains Mono (técnico) */
+
+@layer base {
+  :root {
+    --background: 36 43% 96%;       /* #F8F5F2 */
+    --foreground: 222 47% 11%;      /* #0F172A */
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 28 91% 37%;          /* #B45309 */
+    --primary-foreground: 36 43% 96%;
+    --secondary: 36 20% 91%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 36 20% 91%;
+    --muted-foreground: 222 20% 45%;
+    --accent: 28 60% 93%;
+    --accent-foreground: 28 91% 30%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 36 15% 85%;
+    --input: 36 15% 85%;
+    --ring: 28 91% 37%;
+    --radius: 0.25rem;
+  }
+
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 36 43% 96%;
+    --card: 222 40% 15%;
+    --card-foreground: 36 43% 96%;
+    --popover: 222 40% 15%;
+    --popover-foreground: 36 43% 96%;
+    --primary: 28 91% 50%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 222 30% 20%;
+    --secondary-foreground: 36 43% 96%;
+    --muted: 222 30% 20%;
+    --muted-foreground: 222 15% 65%;
+    --accent: 28 40% 25%;
+    --accent-foreground: 28 80% 80%;
+    --border: 222 25% 22%;
+    --input: 222 25% 22%;
+    --ring: 28 91% 50%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground font-sans antialiased; }
+  html { scroll-behavior: smooth; }
+}
+
+@layer components {
+  .font-display {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .font-display-italic {
+    font-family: "Cormorant Garamond", Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .font-technical {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .label-uppercase {
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+  .section-navy {
+    background-color: #0F172A;
+    color: #F8F5F2;
+  }
+  .section-cream {
+    background-color: #F8F5F2;
+    color: #0F172A;
+  }
+  .border-technical {
+    border: 1px solid hsl(var(--border));
+  }
+  .badge-match {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    background-color: #B45309;
+    color: #F8F5F2;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out;
+  }
+  .animate-slide-up {
+    animation: slide-up 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  @keyframes fade-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+  .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border));
+    border-radius: 2px;
+  }
+}
