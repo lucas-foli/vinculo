@@ -7,19 +7,64 @@ export function useThreads(userId: string | undefined, userType: "creator" | "ag
   const [isLoading, setIsLoading] = useState(true);
 
   const load = async () => {
-    if (!userId || !userType) return;
+    if (!userId || !userType) {
+      setIsLoading(false);
+      return;
+    }
     const col = userType === "creator" ? "creator_id" : "agency_id";
     const { data } = await supabase
       .from("threads")
       .select("*")
       .eq(col, userId)
       .order("last_message_at", { ascending: false, nullsFirst: false });
-    if (data) setThreads(data as unknown as Thread[]);
+    if (!data) {
+      setIsLoading(false);
+      return;
+    }
+    const rows = data as unknown as Thread[];
+
+    // Hydrate counterpart name in one round trip per kind.
+    const counterpartIds = Array.from(
+      new Set(rows.map((t) => (userType === "creator" ? t.agency_id : t.creator_id)))
+    );
+
+    if (counterpartIds.length === 0) {
+      setThreads(rows);
+      setIsLoading(false);
+      return;
+    }
+
+    if (userType === "creator") {
+      const { data: agencies } = await supabase
+        .from("agencies")
+        .select("user_id, name, logo_url, slug")
+        .in("user_id", counterpartIds);
+      const map = new Map(
+        (agencies ?? []).map((a) => [a.user_id as string, a as Thread["agency"] & { user_id: string }])
+      );
+      setThreads(rows.map((t) => ({ ...t, agency: map.get(t.agency_id) ?? undefined })));
+    } else {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, display_name, avatar_url")
+        .in("id", counterpartIds);
+      const map = new Map((profiles ?? []).map((p) => [p.id as string, p]));
+      setThreads(
+        rows.map((t) => {
+          const p = map.get(t.creator_id);
+          return {
+            ...t,
+            creator: p ? { display_name: p.display_name, avatar_url: p.avatar_url } : undefined,
+          };
+        })
+      );
+    }
     setIsLoading(false);
   };
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, userType]);
 
   return { threads, isLoading, reload: load };
@@ -61,7 +106,7 @@ export function useMessages(threadId: string | undefined) {
 
     channelRef.current = channel;
     return () => {
-      channel.unsubscribe();
+      supabase.removeChannel(channel);
     };
   }, [threadId]);
 

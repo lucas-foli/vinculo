@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useVinculoProfile } from "@/hooks/useVinculoProfile";
 import { useThreads, useMessages, markDealClosed } from "@/hooks/useVinculoChat";
 import { supabase } from "@/integrations/supabase/client";
-import type { Agency, Thread } from "@/types/vinculo";
+import type { Thread } from "@/types/vinculo";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ArrowLeft, Send, HandshakeIcon } from "lucide-react";
@@ -34,26 +34,28 @@ function ThreadSidebar({
             <p className="font-sans text-sm text-[#0F172A]/40">Sem conversas</p>
           </div>
         ) : (
-          threads.map((t) => (
-            <Link
-              key={t.id}
-              to={`/chat/${t.id}`}
-              className={`block px-4 py-4 border-b border-[#0F172A]/5 hover:bg-[#0F172A]/2 transition-colors ${
-                t.id === activeId ? "bg-[#B45309]/5 border-l-2 border-l-[#B45309]" : ""
-              }`}
-            >
-              <div className="font-serif text-sm text-[#0F172A] truncate">
-                {userType === "creator"
-                  ? `Agência #${t.agency_id.slice(0, 8)}`
-                  : `Criador #${t.creator_id.slice(0, 8)}`}
-              </div>
-              <div className="font-technical text-[10px] text-[#0F172A]/40 mt-1">
-                {t.last_message_at
-                  ? formatDistanceToNow(new Date(t.last_message_at), { addSuffix: true, locale: ptBR })
-                  : "Nova conversa"}
-              </div>
-            </Link>
-          ))
+          threads.map((t) => {
+            const name =
+              userType === "creator"
+                ? t.agency?.name ?? "Agência"
+                : t.creator?.display_name ?? "Criador";
+            return (
+              <Link
+                key={t.id}
+                to={`/chat/${t.id}`}
+                className={`block px-4 py-4 border-b border-[#0F172A]/5 hover:bg-[#0F172A]/2 transition-colors ${
+                  t.id === activeId ? "bg-[#B45309]/5 border-l-2 border-l-[#B45309]" : ""
+                }`}
+              >
+                <div className="font-serif text-sm text-[#0F172A] truncate">{name}</div>
+                <div className="font-technical text-[10px] text-[#0F172A]/40 mt-1">
+                  {t.last_message_at
+                    ? formatDistanceToNow(new Date(t.last_message_at), { addSuffix: true, locale: ptBR })
+                    : "Nova conversa"}
+                </div>
+              </Link>
+            );
+          })
         )}
       </div>
     </div>
@@ -71,22 +73,34 @@ function ThreadView({ threadId }: { threadId: string }) {
   const [dealSaving, setDealSaving] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const [otherParty, setOtherParty] = useState<string>("...");
-  const [thread, setThread] = useState<Thread | null>(null);
 
   useEffect(() => {
+    if (!profile?.user_type) return;
     supabase.from("threads").select("*").eq("id", threadId).maybeSingle().then(({ data }) => {
-      if (data) {
-        setThread(data as unknown as Thread);
-        const otherId = profile?.user_type === "creator" ? (data as Thread).agency_id : (data as Thread).creator_id;
-        // Try to fetch agency name
-        if (profile?.user_type === "creator") {
-          supabase.from("agencies").select("name").eq("user_id", otherId).maybeSingle().then(({ data: a }) => {
-            if (a) setOtherParty((a as Agency).name);
+      if (!data) return;
+      const t = data as unknown as Thread;
+      const otherId = profile.user_type === "creator" ? t.agency_id : t.creator_id;
+      if (profile.user_type === "creator") {
+        supabase
+          .from("agencies")
+          .select("name")
+          .eq("user_id", otherId)
+          .maybeSingle()
+          .then(({ data: a }) => {
+            if (a?.name) setOtherParty(a.name as string);
           });
-        }
+      } else {
+        supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("id", otherId)
+          .maybeSingle()
+          .then(({ data: p }) => {
+            if (p?.display_name) setOtherParty(p.display_name as string);
+          });
       }
     });
-  }, [threadId, profile]);
+  }, [threadId, profile?.user_type]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
